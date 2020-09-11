@@ -3,7 +3,7 @@
 # Для создания использяемого файла (.exe) используется скрипт
 # https://github.com/MScholtes/PS2EXE
 
-./PS2EXE.ps1 `
+ps2exe `
 -InputFile '.\MountShares-GUI.ps1' `
 -OutputFile '.\MountShares-GUI.exe' `
 -iconFile '.\favicon.ico' `
@@ -192,6 +192,7 @@ function connectSharedFolders {
 
         if ($ValidAccount) {
             $CredentialsWithDomain = New-Object System.Management.Automation.PsCredential("$DomainName\$UserName", $Password)
+            $SleepMs = 100
 
             $statusBar.Text = "Освобождаем буквы H, S, T..."
             Remove-PSDrive -Name H, S, T -Scope Global -ErrorAction SilentlyContinue
@@ -202,19 +203,40 @@ function connectSharedFolders {
                     Start-Process -FilePath "net" -ArgumentList "use $driveLetter /delete" -WindowStyle "Hidden"
                 }
             }
-            Start-Sleep -Milliseconds 100
+            Start-Sleep -Milliseconds $SleepMs
 
             $statusBar.Text = "Подключаем HOME..."
-            New-PSDrive -Name "H" -Root "$RootPath\HOME\$UserName" -PSProvider "FileSystem" -Credential $CredentialsWithDomain -Persist -Scope Global -ErrorAction SilentlyContinue > $null
-            Start-Sleep -Milliseconds 100
+            New-PSDrive `
+                -Name "H" `
+                -PSProvider "FileSystem" `
+                -Root "$RootPath\HOME\$UserName" `
+                -Credential $CredentialsWithDomain `
+                -Persist `
+                -Scope Global `
+                -ErrorAction SilentlyContinue > $null
+            Start-Sleep -Milliseconds $SleepMs
 
             $statusBar.Text = "Подключаем Share..."
-            New-PSDrive -Name "S" -Root "$RootPath\Share" -PSProvider "FileSystem" -Credential $CredentialsWithDomain -Persist -Scope Global -ErrorAction SilentlyContinue > $null
-            Start-Sleep -Milliseconds 100
+            New-PSDrive `
+                -Name "S" `
+                -PSProvider "FileSystem" `
+                -Root "$RootPath\Share" `
+                -Credential $CredentialsWithDomain `
+                -Persist `
+                -Scope Global `
+                -ErrorAction SilentlyContinue > $null
+            Start-Sleep -Milliseconds $SleepMs
 
             $statusBar.Text = "Подключаем Data..."
-            New-PSDrive -Name "T" -Root "$RootPath\Data" -PSProvider "FileSystem" -Credential $CredentialsWithDomain -Persist -Scope Global -ErrorAction SilentlyContinue > $null
-            Start-Sleep -Milliseconds 100
+            New-PSDrive `
+                -Name "T" `
+                -PSProvider "FileSystem" `
+                -Root "$RootPath\Data" `
+                -Credential $CredentialsWithDomain `
+                -Persist `
+                -Scope Global `
+                -ErrorAction SilentlyContinue > $null
+            Start-Sleep -Milliseconds $SleepMs
 
             if ((Test-Path H:, S:, T:) -contains $false) {
                 $FailureMessage = "Не все диски были подключены, попробуйте еще раз!"
@@ -235,8 +257,8 @@ function connectSharedFolders {
                 $LoginText.Enabled = $false
                 $PasswordText.Enabled = $false
 
-                # Open explorer window
-                explorer.exe
+                # Open an Explorer window at the 'Computer'
+                Start-Process -FilePath "explorer" -ArgumentList ","
 
                 $ConnectForm.Close()
             }
